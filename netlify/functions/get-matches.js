@@ -19,7 +19,7 @@ exports.handler = async function (event, context) {
 
   try {
     const now = new Date();
-    const maxFuture = new Date(now.getTime() + 48 * 60 * 60 * 1000); // Επόμενες 48 ώρες
+    const maxFuture = new Date(now.getTime() + 168 * 60 * 60 * 1000); // Επόμενες 48 ώρες
     let allMatches = [];
 
     // Κλήση στο The Odds API για κάθε ενεργό πρωτάθλημα
