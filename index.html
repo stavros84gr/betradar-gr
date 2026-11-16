@@ -1,1115 +1,694 @@
 <!DOCTYPE html>
-<html lang="el" class="dark">
+<html lang="el">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetRadar GR | Αυτόματα Προγνωστικά Ποδοσφαίρου & Bet Builder</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        slate: {
-                            850: '#151e32',
-                            900: '#0f172a',
-                            950: '#090d16',
-                        },
-                        emerald: {
-                            450: '#10b981',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Custom scrollbar for sleek sportsbook look */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #10b981;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        @keyframes pulse-border {
-            0%, 100% { border-color: rgba(16, 185, 129, 0.3); }
-            50% { border-color: rgba(16, 185, 129, 0.8); }
-        }
-        .animate-pulse-border {
-            animation: pulse-border 2s infinite;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BetRadar GR — Live Προγνωστικά & Bet Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0f19;
+      color: #f8fafc;
+    }
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .odd-btn {
+      transition: all 0.15s ease;
+    }
+    .odd-btn:hover {
+      transform: translateY(-1px);
+    }
+    .odd-btn.selected {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border-color: #34d399;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white pb-24 lg:pb-8">
+<body class="min-h-screen flex flex-col">
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Brand Logo -->
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <i data-lucide="radar" class="w-6 h-6 text-white"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xl font-extrabold tracking-tight text-white">BetRadar<span class="text-emerald-400">GR</span></span>
-                            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                AI + SCRAPER
-                            </span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 hidden sm:block">Ελλάδα & Εξωτερικό • Αυτόματη Συλλογή Προγνωστικών</p>
-                    </div>
-                </div>
-
-                <!-- Right Actions: Sync Status & Netlify Setup Info -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <!-- Sync Feeds Button -->
-                    <button id="sync-btn" onclick="syncFeeds()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs sm:text-sm font-medium text-slate-200 transition-all active:scale-95">
-                        <i id="sync-icon" data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400"></i>
-                        <span class="hidden md:inline">Συγχρονισμός Πηγών</span>
-                        <span class="md:hidden">Sync</span>
-                        <span id="last-sync-badge" class="hidden sm:inline-block text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded-md">Μόλις τώρα</span>
-                    </button>
-
-                    <!-- Bet Builder Quick Open Button -->
-                    <button onclick="openBetBuilderModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
-                        <i data-lucide="layers" class="w-4 h-4"></i>
-                        <span>Bet Builder</span>
-                    </button>
-
-                    <!-- Netlify Architecture Modal Trigger -->
-                    <button onclick="toggleModal('netlify-modal', true)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors" title="Αρχιτεκτονική Netlify">
-                        <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
-                    </button>
-                </div>
-            </div>
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-30 glass-panel border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i data-lucide="radar" class="w-6 h-6 text-white"></i>
         </div>
-    </header>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-lg tracking-tight text-white">BetRadar<span class="text-emerald-400">GR</span></span>
+            <span id="api-status-badge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              Σύνδεση...
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Ελλάδα & Εξωτερικό • Μόνο Επερχόμενοι Αγώνες</p>
+        </div>
+      </div>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        
-        <!-- Live Aggregator Status Banner -->
-        <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+      <div class="flex items-center gap-2.5">
+        <button onclick="fetchLiveMatches(true)" id="sync-btn" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400" id="sync-icon"></i>
+          <span>Ανανέωση Live</span>
+        </button>
+
+        <button onclick="toggleMobileSlip()" class="lg:hidden relative flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold shadow-lg shadow-emerald-600/25">
+          <i data-lucide="ticket" class="w-4 h-4"></i>
+          <span>Δελτίο</span>
+          <span id="mobile-slip-count" class="bg-slate-950 text-emerald-400 px-1.5 py-0.2 rounded-full text-[11px]">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left / Center Feed -->
+    <div class="lg:col-span-8 space-y-5">
+      
+      <!-- Live Status Banner -->
+      <div class="glass-panel rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-4 border-l-emerald-500">
+        <div class="flex items-start sm:items-center gap-3">
+          <span class="relative flex h-3 w-3 mt-1 sm:mt-0 shrink-0">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <div>
+            <p class="text-xs font-semibold text-white" id="feed-status-title">Αναζήτηση επερχόμενων αγώνων...</p>
+            <p class="text-[11px] text-slate-400" id="feed-status-subtitle">Φιλτράρισμα βάσει τρέχουσας ώρας (<span id="live-clock">--:--</span>) ώστε να εμφανίζονται μόνο ματς που δεν έχουν ξεκινήσει.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 shrink-0">
+          <span class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800" id="active-count-pill">0 Αγώνες</span>
+        </div>
+      </div>
+
+      <!-- Region & Market Filters -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button onclick="setRegionFilter('all')" data-region="all" class="region-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition">Όλα</button>
+          <button onclick="setRegionFilter('greece')" data-region="greece" class="region-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">🇬🇷 Ελλάδα</button>
+          <button onclick="setRegionFilter('europe')" data-region="europe" class="region-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">🇪🇺 Εξωτερικό</button>
+        </div>
+
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button onclick="setMarketFilter('all')" data-market="all" class="market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-emerald-400 border border-emerald-500/40 transition">Όλες οι Αγορές</button>
+          <button onclick="setMarketFilter('1x2')" data-market="1x2" class="market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 transition">Βασικά (1X2)</button>
+          <button onclick="setMarketFilter('goals')" data-market="goals" class="market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 transition">Goal / Over</button>
+          <button onclick="setMarketFilter('value')" data-market="value" class="market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 transition">Combo / Value</button>
+        </div>
+      </div>
+
+      <!-- Matches Grid -->
+      <div id="matches-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+    </div>
+
+    <!-- Right Sidebar: Bet Slip -->
+    <aside class="hidden lg:block lg:col-span-4">
+      <div class="sticky top-22 glass-panel rounded-2xl border border-slate-800 overflow-hidden flex flex-col">
+        <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="ticket" class="w-4 h-4 text-emerald-400"></i>
+            <h2 class="font-bold text-sm text-white">Το Δελτίο μου</h2>
+            <span id="desktop-slip-count" class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">0</span>
+          </div>
+          <button onclick="clearSlip()" class="text-xs text-slate-400 hover:text-rose-400 transition">Καθαρισμός</button>
+        </div>
+        <div id="desktop-slip-body" class="p-4 space-y-3 max-h-[68vh] overflow-y-auto"></div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Mobile Bet Slip Drawer -->
+  <div id="mobile-slip-drawer" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" onclick="toggleMobileSlip()"></div>
+    <div class="absolute bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 rounded-t-2xl max-h-[85vh] flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="ticket" class="w-4 h-4 text-emerald-400"></i>
+          <h3 class="font-bold text-sm text-white">Το Δελτίο μου</h3>
+        </div>
+        <button onclick="toggleMobileSlip()" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="mobile-slip-body" class="p-4 space-y-3 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- Bet Builder Modal -->
+  <div id="bet-builder-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeBetBuilder()"></div>
+    <div class="relative w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Bet Builder</span>
+            <span id="bb-league" class="text-xs text-slate-400">League</span>
+          </div>
+          <h3 id="bb-match-title" class="font-bold text-base text-white mt-1">Ομάδα Α vs Ομάδα Β</h3>
+        </div>
+        <button onclick="closeBetBuilder()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="bb-options-container" class="p-4 overflow-y-auto space-y-4"></div>
+
+      <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-4">
+        <div>
+          <p class="text-[11px] text-slate-400">Συνδυαστική Απόδοση (<span id="bb-selected-count">0</span> επιλογές)</p>
+          <p id="bb-total-odd" class="text-xl font-extrabold text-emerald-400">1.00</p>
+        </div>
+        <button onclick="addBetBuilderToSlip()" id="bb-add-btn" disabled class="px-5 py-2.5 rounded-xl bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Προσθήκη στο Δελτίο</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-medium">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+    <span id="toast-msg">Επιτυχής ενέργεια</span>
+  </div>
+
+  <script>
+    let matchesData = [];
+    let currentRegion = 'all';
+    let currentMarket = 'all';
+    let slip = [];
+    let stake = 10;
+    let activeBBMatch = null;
+    let activeBBSelections = [];
+
+    function updateClock() {
+      const now = new Date();
+      const str = now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+      const el = document.getElementById('live-clock');
+      if (el) el.textContent = str;
+    }
+
+    function formatKickoff(isoString) {
+      const date = new Date(isoString);
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+      const timeStr = date.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+      if (isToday) return `Σήμερα, ${timeStr}`;
+      if (isTomorrow) return `Αύριο, ${timeStr}`;
+      const dayStr = date.toLocaleDateString('el-GR', { weekday: 'short', day: 'numeric', month: 'numeric' });
+      return `${dayStr}, ${timeStr}`;
+    }
+
+    function isMatchExpired(isoString) {
+      return new Date(isoString).getTime() <= Date.now();
+    }
+
+    async function fetchLiveMatches(manual = false) {
+      const icon = document.getElementById('sync-icon');
+      const statusBadge = document.getElementById('api-status-badge');
+      const statusTitle = document.getElementById('feed-status-title');
+
+      if (icon) icon.classList.add('animate-spin');
+
+      try {
+        const response = await fetch('/.netlify/functions/get-matches');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+
+        if (payload && Array.isArray(payload.matches)) {
+          matchesData = payload.matches.filter(m => !isMatchExpired(m.kickoffISO));
+          statusBadge.textContent = 'LIVE API';
+          statusBadge.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+          statusTitle.textContent = 'Ζωντανή Ροή Προγνωστικών (Netlify Live Feed)';
+          if (manual) showToast(`Ενημερώθηκε! Βρέθηκαν ${matchesData.length} επερχόμενοι αγώνες.`);
+        } else {
+          throw new Error('Invalid payload');
+        }
+      } catch (err) {
+        statusBadge.textContent = 'ΣΦΑΛΜΑ API';
+        statusBadge.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30';
+        statusTitle.textContent = 'Δεν ήταν δυνατή η φόρτωση από το API (Ελέγξτε το ODDS_API_KEY στο Netlify)';
+        matchesData = [];
+      } finally {
+        if (icon) setTimeout(() => icon.classList.remove('animate-spin'), 400);
+        renderMatches();
+      }
+    }
+
+    function renderMatches() {
+      const container = document.getElementById('matches-container');
+      const activeMatches = matchesData.filter(m => !isMatchExpired(m.kickoffISO));
+
+      const filtered = activeMatches.filter(m => {
+        const regionOk = currentRegion === 'all' || m.region === currentRegion;
+        const marketOk = currentMarket === 'all' || m.category === currentMarket;
+        return regionOk && marketOk;
+      });
+
+      document.getElementById('active-count-pill').textContent = `${filtered.length} Ενεργά Ματς`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full glass-panel rounded-2xl p-8 text-center">
+            <i data-lucide="calendar-clock" class="w-10 h-10 text-slate-500 mx-auto mb-3"></i>
+            <p class="text-sm text-slate-200 font-semibold">Δεν υπάρχουν επερχόμενοι αγώνες σε αυτή την κατηγορία</p>
+            <p class="text-xs text-slate-400 mt-1">Όλα τα παιχνίδια που έχουν ήδη ξεκινήσει αφαιρούνται αυτόματα. Δοκίμασε «Όλα» ή πάτα Ανανέωση.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered.map(match => {
+        const isSelected = slip.some(item => item.id === `single-${match.id}`);
+        const kickoffFormatted = formatKickoff(match.kickoffISO);
+
+        return `
+          <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                  <span>${match.flag}</span>
+                  <span class="font-medium text-slate-300">${match.league}</span>
+                  <span>•</span>
+                  <span class="text-emerald-400 font-medium">${kickoffFormatted}</span>
+                </div>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                  ${match.source}
                 </span>
-                <div>
-                    <h2 class="text-sm font-semibold text-white">Ενεργή Συλλογή Δεδομένων (Netlify Cron Active)</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Σαρώνονται 14 ελληνικά & διεθνή portals (Super League, Premier League, Champions League, La Liga, Serie A).</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/80">🇬🇷 4 Αγώνες</span>
-                <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/80">🇪🇺 6 Αγώνες</span>
-                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">Hit Rate: 68.4%</span>
-            </div>
-        </div>
+              </div>
 
-        <!-- Filters Section -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <!-- Region Tabs -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                <button onclick="setRegionFilter('all')" data-region="all" class="region-btn active px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-slate-950 transition-all whitespace-nowrap">
-                    🌍 Όλα (10)
-                </button>
-                <button onclick="setRegionFilter('greece')" data-region="greece" class="region-btn px-4 py-2 rounded-xl text-sm font-medium bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition-all whitespace-nowrap">
-                    🇬🇷 Ελλάδα (Super League)
-                </button>
-                <button onclick="setRegionFilter('international')" data-region="international" class="region-btn px-4 py-2 rounded-xl text-sm font-medium bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition-all whitespace-nowrap">
-                    🇪🇺 Εξωτερικό (Top Leagues)
-                </button>
+              <div class="mb-3">
+                <h3 class="font-bold text-base text-white tracking-tight">${match.home} <span class="text-slate-500 font-normal mx-1">vs</span> ${match.away}</h3>
+                <div class="flex items-center gap-1.5 mt-1.5">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">⚡ Bet Builder</span>
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 mb-3">
+                ${match.analysis}
+              </p>
+
+              <div class="mb-4">
+                <div class="flex justify-between text-[11px] mb-1">
+                  <span class="text-slate-400">Εμπιστοσύνη Αλγορίθμου</span>
+                  <span class="font-bold text-emerald-400">${match.confidence}%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: ${match.confidence}%"></div>
+                </div>
+              </div>
             </div>
 
-            <!-- Market Category Pills -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                <button onclick="setMarketFilter('all')" data-market="all" class="market-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-emerald-400 border border-emerald-500/40 transition-all whitespace-nowrap">
-                    Όλες οι Αγορές
-                </button>
-                <button onclick="setMarketFilter('1x2')" data-market="1x2" class="market-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all whitespace-nowrap">
-                    Βασικά (1X2)
-                </button>
-                <button onclick="setMarketFilter('goals')" data-market="goals" class="market-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all whitespace-nowrap">
-                    Goal / Over
-                </button>
-                <button onclick="setMarketFilter('value')" data-market="value" class="market-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all whitespace-nowrap">
-                    🔥 Value Bets
-                </button>
-                <button onclick="setMarketFilter('builder')" data-market="builder" class="market-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all whitespace-nowrap">
-                    ⚡ Έτοιμα Bet Builder
-                </button>
-            </div>
-        </div>
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Πρόταση</span>
+                <span class="font-bold text-sm text-white truncate block">${match.pickLabel}</span>
+              </div>
 
-        <!-- Main Layout Grid: Matches (Left 8 cols) + Sticky Bet Slip (Right 4 cols) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            <!-- Predictions Feed Column -->
-            <div class="lg:col-span-8 space-y-4">
-                <div id="matches-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Match cards injected dynamically via JS -->
-                </div>
-            </div>
-
-            <!-- Desktop Sticky Bet Slip & Quick Bet Builder Sidebar -->
-            <aside class="hidden lg:block lg:col-span-4 sticky top-24">
-                <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                    <!-- Slip Header -->
-                    <div class="p-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="receipt" class="w-5 h-5 text-emerald-400"></i>
-                            <h3 class="font-bold text-white">Το Δελτίο μου</h3>
-                            <span id="desktop-slip-count" class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-500 text-slate-950">0</span>
-                        </div>
-                        <button onclick="clearSlip()" class="text-xs text-slate-400 hover:text-rose-400 transition-colors">
-                            Καθαρισμός
-                        </button>
-                    </div>
-
-                    <!-- Slip Body -->
-                    <div id="desktop-slip-items" class="p-4 max-h-[380px] overflow-y-auto space-y-3">
-                        <!-- Empty State -->
-                        <div class="text-center py-8 px-4">
-                            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
-                                <i data-lucide="ticket" class="w-6 h-6"></i>
-                            </div>
-                            <p class="text-sm font-medium text-slate-300">Το δελτίο σας είναι άδειο</p>
-                            <p class="text-xs text-slate-500 mt-1">Επιλέξτε προγνωστικά από τη λίστα ή φτιάξτε ένα custom Bet Builder.</p>
-                        </div>
-                    </div>
-
-                    <!-- Slip Footer / Calculator -->
-                    <div id="desktop-slip-footer" class="hidden p-4 bg-slate-850 border-t border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-slate-400">Συνολική Απόδοση:</span>
-                            <span id="desktop-total-odds" class="font-extrabold text-lg text-emerald-400">1.00</span>
-                        </div>
-
-                        <div class="flex items-center justify-between gap-3">
-                            <label class="text-xs text-slate-400 whitespace-nowrap">Ποντάρισμα (€):</label>
-                            <div class="relative w-32">
-                                <input type="number" id="desktop-stake" value="10" min="1" step="1" oninput="updateSlipCalculations()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-right text-sm font-bold text-white focus:outline-none focus:border-emerald-500">
-                            </div>
-                        </div>
-
-                        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-400">Πιθανό Κέρδος:</span>
-                            <span id="desktop-potential-win" class="text-base font-extrabold text-white">10.00 €</span>
-                        </div>
-
-                        <button onclick="copySlipToClipboard()" class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-98">
-                            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
-                            <span>Αντιγραφή Δελτίου</span>
-                        </button>
-
-                        <!-- Bookmaker Direct Redirect Buttons -->
-                        <div class="pt-3 border-t border-slate-800/80">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Παίξε το Δελτίο σε Bookmaker</span>
-                                <i data-lucide="external-link" class="w-3 h-3 text-slate-500"></i>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="redirectToBookmaker('stoiximan')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-600/20 transition-all active:scale-95">
-                                    <span>Stoiximan</span>
-                                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="redirectToBookmaker('bet365')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-600 hover:to-teal-500 text-amber-300 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-700/20 transition-all active:scale-95">
-                                    <span>bet365</span>
-                                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="redirectToBookmaker('superbet')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/20 transition-all active:scale-95">
-                                    <span>Superbet</span>
-                                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="redirectToBookmaker('novibet')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 hover:from-cyan-500 hover:to-sky-400 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 transition-all active:scale-95">
-                                    <span>Novibet</span>
-                                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </main>
-
-    <!-- Mobile Floating Bottom Bar for Slip -->
-    <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-4 py-3">
-        <div class="flex items-center justify-between gap-3 max-w-lg mx-auto">
-            <button onclick="toggleMobileSlipDrawer(true)" class="flex-1 flex items-center justify-between bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl px-4 py-2.5">
-                <div class="flex items-center gap-2.5">
-                    <span id="mobile-slip-count" class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">0</span>
-                    <span class="text-sm font-semibold text-white">Το Δελτίο μου</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block">Απόδοση</span>
-                    <span id="mobile-total-odds" class="text-sm font-extrabold text-emerald-400">1.00</span>
-                </div>
-            </button>
-            <button onclick="openBetBuilderModal()" class="px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg">
-                <i data-lucide="layers" class="w-4 h-4"></i>
-                <span>Builder</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Mobile Slip Drawer Modal -->
-    <div id="mobile-slip-drawer" class="fixed inset-0 z-50 hidden">
-        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" onclick="toggleMobileSlipDrawer(false)"></div>
-        <div class="fixed bottom-0 inset-x-0 bg-slate-900 rounded-t-3xl border-t border-slate-800 max-h-[85vh] flex flex-col z-10">
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="receipt" class="w-5 h-5 text-emerald-400"></i>
-                    <h3 class="font-bold text-white">Το Δελτίο μου</h3>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="clearSlip()" class="text-xs text-rose-400">Καθαρισμός</button>
-                    <button onclick="toggleMobileSlipDrawer(false)" class="p-1.5 rounded-lg bg-slate-800 text-slate-400">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-            <div id="mobile-slip-items" class="p-4 overflow-y-auto space-y-3 flex-1">
-                <!-- Populated dynamically -->
-            </div>
-            <div id="mobile-slip-footer" class="hidden p-4 bg-slate-850 border-t border-slate-800 space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-400">Συνολική Απόδοση:</span>
-                    <span id="mobile-drawer-odds" class="text-lg font-extrabold text-emerald-400">1.00</span>
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                    <span class="text-xs text-slate-400">Ποντάρισμα (€):</span>
-                    <input type="number" id="mobile-stake" value="10" min="1" oninput="syncStakeInputs(this.value)" class="w-28 bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-right text-sm font-bold text-white">
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900">
-                    <span class="text-xs text-slate-400">Πιθανό Κέρδος:</span>
-                    <span id="mobile-potential-win" class="font-extrabold text-emerald-400">10.00 €</span>
-                </div>
-                <button onclick="copySlipToClipboard()" class="w-full py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2">
-                    <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>Αντιγραφή Δελτίου</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="openBetBuilder('${match.id}')" title="Φτιάξε Bet Builder" class="p-2 rounded-xl bg-slate-800 hover:bg-amber-500/20 text-amber-400 border border-slate-700 hover:border-amber-500/40 transition">
+                  <i data-lucide="layers" class="w-4 h-4"></i>
                 </button>
 
-                <!-- Mobile Bookmaker Direct Redirect Buttons -->
-                <div class="pt-2.5 border-t border-slate-800">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Παίξε το Δελτίο σε Bookmaker</span>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="redirectToBookmaker('stoiximan')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md">
-                            <span>Stoiximan</span>
-                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="redirectToBookmaker('bet365')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-600 text-amber-300 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md">
-                            <span>bet365</span>
-                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="redirectToBookmaker('superbet')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md">
-                            <span>Superbet</span>
-                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="redirectToBookmaker('novibet')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md">
-                            <span>Novibet</span>
-                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
-                </div>
+                <button onclick="toggleSinglePick('${match.id}')" class="odd-btn ${isSelected ? 'selected' : 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border-slate-700'} px-3.5 py-2 rounded-xl border font-extrabold text-sm flex items-center gap-1.5">
+                  <span>${match.odd.toFixed(2)}</span>
+                  <i data-lucide="${isSelected ? 'check' : 'plus'}" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
+        `;
+      }).join('');
 
-    <!-- Custom Bet Builder Modal -->
-    <div id="bet-builder-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleModal('bet-builder-modal', false)"></div>
-        <div class="relative min-h-screen flex items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
-                <!-- Modal Header -->
-                <div class="p-5 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                            <i data-lucide="layers" class="w-5 h-5 text-emerald-400"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-extrabold text-white">Custom Bet Builder</h3>
-                            <p class="text-xs text-slate-400">Συνδύασε αγορές από τον ίδιο αγώνα σε μία απόδοση</p>
-                        </div>
-                    </div>
-                    <button onclick="toggleModal('bet-builder-modal', false)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
+      lucide.createIcons();
+    }
 
-                <!-- Modal Body -->
-                <div class="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
-                    <!-- Match Selector -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">1. Επιλογή Αγώνα</label>
-                        <select id="bb-match-select" onchange="resetBuilderSelections()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none focus:border-emerald-500">
-                            <!-- Options populated dynamically -->
-                        </select>
-                    </div>
+    function setRegionFilter(region) {
+      currentRegion = region;
+      document.querySelectorAll('.region-tab').forEach(btn => {
+        if (btn.dataset.region === region) {
+          btn.className = 'region-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white transition';
+        } else {
+          btn.className = 'region-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+        }
+      });
+      renderMatches();
+    }
 
-                    <!-- Market Groups -->
-                    <div class="space-y-4">
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">2. Επιλέξτε Συνδυασμούς (Ελάχιστο 2)</label>
-                        
-                        <!-- Market 1: Τελικό Αποτέλεσμα -->
-                        <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                            <span class="text-xs font-bold text-slate-300 block mb-2.5">Τελικό Αποτέλεσμα (1X2)</span>
-                            <div class="grid grid-cols-3 gap-2" data-bb-group="result">
-                                <button type="button" onclick="toggleBuilderOption(this, 'result', 'Άσος (1)', 2.15)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">1</span>
-                                    <span class="text-emerald-400 font-bold">2.15</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'result', 'Ισοπαλία (X)', 3.30)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">X</span>
-                                    <span class="text-emerald-400 font-bold">3.30</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'result', 'Διπλό (2)', 3.40)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">2</span>
-                                    <span class="text-emerald-400 font-bold">3.40</span>
-                                </button>
-                            </div>
-                        </div>
+    function setMarketFilter(market) {
+      currentMarket = market;
+      document.querySelectorAll('.market-tab').forEach(btn => {
+        if (btn.dataset.market === market) {
+          btn.className = 'market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-emerald-400 border border-emerald-500/40 transition';
+        } else {
+          btn.className = 'market-tab px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 transition';
+        }
+      });
+      renderMatches();
+    }
 
-                        <!-- Market 2: Σύνολο Γκολ -->
-                        <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                            <span class="text-xs font-bold text-slate-300 block mb-2.5">Σύνολο Γκολ</span>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" data-bb-group="goals">
-                                <button type="button" onclick="toggleBuilderOption(this, 'goals', 'Over 1.5 Γκολ', 1.32)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Over 1.5</span>
-                                    <span class="text-emerald-400 font-bold">1.32</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'goals', 'Over 2.5 Γκολ', 1.95)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Over 2.5</span>
-                                    <span class="text-emerald-400 font-bold">1.95</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'goals', 'Under 2.5 Γκολ', 1.85)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Under 2.5</span>
-                                    <span class="text-emerald-400 font-bold">1.85</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'goals', 'Goal / Goal', 1.78)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Goal/Goal</span>
-                                    <span class="text-emerald-400 font-bold">1.78</span>
-                                </button>
-                            </div>
-                        </div>
+    function toggleSinglePick(matchId) {
+      const match = matchesData.find(m => m.id === matchId);
+      if (!match) return;
+      const itemId = `single-${match.id}`;
+      const existingIdx = slip.findIndex(i => i.id === itemId);
 
-                        <!-- Market 3: Κόρνερ & Κάρτες -->
-                        <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                            <span class="text-xs font-bold text-slate-300 block mb-2.5">Ειδικά: Κόρνερ & Κάρτες</span>
-                            <div class="grid grid-cols-2 gap-2" data-bb-group="specials">
-                                <button type="button" onclick="toggleBuilderOption(this, 'specials', 'Over 8.5 Κόρνερ', 1.55)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Over 8.5 Κόρνερ</span>
-                                    <span class="text-emerald-400 font-bold">1.55</span>
-                                </button>
-                                <button type="button" onclick="toggleBuilderOption(this, 'specials', 'Over 4.5 Κάρτες', 1.68)" class="bb-opt-btn py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-600 text-xs font-semibold flex flex-col items-center gap-1 transition-all">
-                                    <span class="text-slate-300">Over 4.5 Κάρτες</span>
-                                    <span class="text-emerald-400 font-bold">1.68</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="p-5 bg-slate-850 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                        <span class="text-xs text-slate-400 block">Συνδυαστική Απόδοση Bet Builder:</span>
-                        <div class="flex items-baseline gap-2">
-                            <span id="bb-calculated-odd" class="text-2xl font-extrabold text-emerald-400">1.00</span>
-                            <span id="bb-selections-count" class="text-xs text-slate-400">(0 επιλογές)</span>
-                        </div>
-                    </div>
-                    <button id="bb-add-btn" onclick="addCustomBuilderToSlip()" disabled class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        <span>Προσθήκη Bet Builder στο Δελτίο</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Netlify Architecture Info Modal -->
-    <div id="netlify-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleModal('netlify-modal', false)"></div>
-        <div class="relative min-h-screen flex items-center justify-center p-4">
-            <div class="relative w-full max-w-2xl bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
-                <div class="p-5 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
-                        <h3 class="text-lg font-bold text-white">Πώς στήνεται στο Netlify (Backend Scraper)</h3>
-                    </div>
-                    <button onclick="toggleModal('netlify-modal', false)" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-                <div class="p-5 space-y-4 text-sm text-slate-300 max-h-[75vh] overflow-y-auto">
-                    <p>Αυτό το interface είναι έτοιμο για ανέβασμα στο <strong>Netlify</strong>. Για να τραβάει ζωντανά δεδομένα κάθε πρωί αυτόματα:</p>
-                    
-                    <div class="space-y-2">
-                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                            <span class="text-xs font-bold text-emerald-400 uppercase">Βήμα 1: Φάκελος Functions</span>
-                            <p class="text-xs text-slate-400 mt-1">Δημιουργείς το αρχείο <code class="text-cyan-300">netlify/functions/fetch-tips.js</code> με <code class="text-cyan-300">@netlify/functions</code> schedule (π.χ. <code>@hourly</code> ή <code>0 9 * * *</code>).</p>
-                        </div>
-                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                            <span class="text-xs font-bold text-emerald-400 uppercase">Βήμα 2: Πηγές Δεδομένων (RSS & APIs)</span>
-                            <p class="text-xs text-slate-400 mt-1">Η function διαβάζει RSS feeds ελληνικών αθλητικών sites (με <code>rss-parser</code>) ή καλεί το <strong>API-Football / The Odds API</strong> για αποδόσεις και στατιστικά xG.</p>
-                        </div>
-                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                            <span class="text-xs font-bold text-emerald-400 uppercase">Βήμα 3: Αποθήκευση σε Supabase / Netlify Blobs</span>
-                            <p class="text-xs text-slate-400 mt-1">Τα φιλτραρισμένα προγνωστικά αποθηκεύονται σε JSON (Netlify Blobs) ή βάση Supabase, και το Frontend τα φορτώνει αυτόματα με <code>fetch('/api/tips')</code>.</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 font-mono text-xs text-cyan-300 overflow-x-auto">
-<pre>// netlify/functions/fetch-tips.js
-export const config = { schedule: "@every 2h" };
-
-export default async () => {
-  // 1. Fetch από ελληνικά & ξένα sports RSS / Odds API
-  // 2. Ανάλυση & φιλτράρισμα αποδόσεων
-  // 3. Αποθήκευση στο Netlify Blobs / Supabase
-  return new Response("Tips updated successfully!");
-};</pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript Application Logic -->
-    <script>
-        // --- 1. MOCK DATABASE (Simulated scraped data from Greece & Europe) ---
-        const initialMatches = [
-            {
-                id: 'gr-1',
-                region: 'greece',
-                flag: '🇬🇷',
-                league: 'Super League',
-                time: 'Σήμερα, 20:30',
-                home: 'Ολυμπιακός',
-                away: 'ΠΑΟΚ',
-                category: 'goals',
-                pick: 'Goal / Goal & Over 2.5',
-                odd: 2.10,
-                confidence: 84,
-                source: 'GR Analytics',
-                isValue: true,
-                isBuilder: true,
-                reasoning: 'Υψηλός ρυθμός στα ντέρμπι των δύο ομάδων, σκοράρουν σταθερά εντός/εκτός (xG > 1.65 εκατέρωθεν).'
-            },
-            {
-                id: 'gr-2',
-                region: 'greece',
-                flag: '🇬🇷',
-                league: 'Super League',
-                time: 'Σήμερα, 19:30',
-                home: 'ΑΕΚ',
-                away: 'Παναθηναϊκός',
-                category: '1x2',
-                pick: '1 & Over 1.5 Γκολ',
-                odd: 2.35,
-                confidence: 79,
-                source: 'SuperLeague Bot',
-                isValue: true,
-                isBuilder: false,
-                reasoning: 'Ισχυρή έδρα της ΑΕΚ με υψηλή πίεση στα πρώτα 30 λεπτά. Δύσκολα θα μείνει χαμηλά το σκορ.'
-            },
-            {
-                id: 'eu-1',
-                region: 'international',
-                flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-                league: 'Premier League',
-                time: 'Σήμερα, 18:30',
-                home: 'Άρσεναλ',
-                away: 'Λίβερπουλ',
-                category: 'builder',
-                pick: 'GG + Over 9.5 Κόρνερ',
-                odd: 2.25,
-                confidence: 86,
-                source: 'UK xG Model',
-                isValue: true,
-                isBuilder: true,
-                reasoning: 'Κορυφαίες επιθέσεις στην Αγγλία. Μέσος όρος 11.4 κόρνερ στα μεταξύ τους παιχνίδια στο Emirates.'
-            },
-            {
-                id: 'eu-2',
-                region: 'international',
-                flag: '🇪🇸',
-                league: 'La Liga',
-                time: 'Σήμερα, 22:00',
-                home: 'Ρεάλ Μαδρίτης',
-                away: 'Μπαρτσελόνα',
-                category: 'goals',
-                pick: 'Over 3.0 Ασιατικό Γκολ',
-                odd: 1.92,
-                confidence: 88,
-                source: 'LaLiga Scraper',
-                isValue: false,
-                isBuilder: true,
-                reasoning: 'Ανοιχτό ποδόσφαιρο και αμυντικά κενά στις μεταβάσεις. Το El Clasico ευνοεί το υψηλό σκορ.'
-            },
-            {
-                id: 'gr-3',
-                region: 'greece',
-                flag: '🇬🇷',
-                league: 'Super League',
-                time: 'Σήμερα, 17:00',
-                home: 'Άρης',
-                away: 'ΟΦΗ',
-                category: '1x2',
-                pick: '1 (Τελικό Αποτέλεσμα)',
-                odd: 1.72,
-                confidence: 82,
-                source: 'GR Tipsters',
-                isValue: false,
-                isBuilder: false,
-                reasoning: 'Ο Άρης ελέγχει τον ρυθμό στο «Κλ. Βικελίδης», ενώ ο ΟΦΗ δυσκολεύεται αμυντικά μακριά από την Κρήτη.'
-            },
-            {
-                id: 'eu-3',
-                region: 'international',
-                flag: '🇮🇹',
-                league: 'Serie A',
-                time: 'Σήμερα, 21:45',
-                home: 'Ίντερ',
-                away: 'Μίλαν',
-                category: 'builder',
-                pick: '1X & Over 4.5 Κάρτες',
-                odd: 1.98,
-                confidence: 81,
-                source: 'Calcio Data',
-                isValue: true,
-                isBuilder: true,
-                reasoning: 'Derby della Madonnina με ένταση και μονομαχίες. Η Ίντερ έχει το προβάδισμα σταθερότητας.'
-            },
-            {
-                id: 'eu-4',
-                region: 'international',
-                flag: '🇩🇪',
-                league: 'Bundesliga',
-                time: 'Σήμερα, 19:30',
-                home: 'Μπάγερν Μονάχου',
-                away: 'Ντόρτμουντ',
-                category: 'goals',
-                pick: '1 & Goal / Goal',
-                odd: 2.40,
-                confidence: 77,
-                source: 'Bundesliga Feed',
-                isValue: true,
-                isBuilder: false,
-                reasoning: 'Η Μπάγερν σκοράρει κατά ριπάς εντός, αλλά η Ντόρτμουντ βρίσκει χώρους στην αντεπίθεση.'
-            },
-            {
-                id: 'gr-4',
-                region: 'greece',
-                flag: '🇬🇷',
-                league: 'Super League',
-                time: 'Αύριο, 18:00',
-                home: 'Ατρόμητος',
-                away: 'Αστέρας Τρίπολης',
-                category: '1x2',
-                pick: 'Χ (Ισοπαλία)',
-                odd: 3.15,
-                confidence: 65,
-                source: 'Value Scanner',
-                isValue: true,
-                isBuilder: false,
-                reasoning: 'Ισορροπημένο ζευγάρι με παρόμοια αγωνιστική εικόνα. Υψηλή στατιστική αξία στην ισοπαλία.'
-            }
-        ];
-
-        // --- 2. APPLICATION STATE ---
-        let matches = [...initialMatches];
-        let currentRegion = 'all';
-        let currentMarket = 'all';
-        let betSlip = []; // Array of { id, matchTitle, pick, odd, isBuilder }
-        
-        // Bet Builder temporary state
-        let bbSelections = {
-            result: null,
-            goals: null,
-            specials: null
-        };
-
-        // --- 3. INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            renderMatches();
-            populateBuilderMatchSelect();
-            lucide.createIcons();
+      if (existingIdx > -1) {
+        slip.splice(existingIdx, 1);
+      } else {
+        slip = slip.filter(i => i.matchId !== match.id);
+        slip.push({
+          id: itemId,
+          matchId: match.id,
+          matchName: `${match.home} - ${match.away}`,
+          pickLabel: match.pickLabel,
+          odd: match.odd,
+          isBetBuilder: false
         });
+      }
+      renderMatches();
+      renderSlip();
+    }
 
-        // --- 4. FILTERING & RENDERING MATCHES ---
-        function setRegionFilter(region) {
-            currentRegion = region;
-            document.querySelectorAll('.region-btn').forEach(btn => {
-                if (btn.dataset.region === region) {
-                    btn.className = 'region-btn active px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-slate-950 transition-all whitespace-nowrap';
-                } else {
-                    btn.className = 'region-btn px-4 py-2 rounded-xl text-sm font-medium bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800 transition-all whitespace-nowrap';
-                }
-            });
-            renderMatches();
+    function openBetBuilder(matchId) {
+      activeBBMatch = matchesData.find(m => m.id === matchId);
+      if (!activeBBMatch) return;
+      activeBBSelections = [];
+
+      const m = activeBBMatch.markets || { home: 2.00, draw: 3.30, away: 3.40, over25: 1.85, under25: 1.95 };
+
+      const groups = [
+        {
+          title: 'Τελικό Αποτέλεσμα (90\')',
+          groupKey: '1x2',
+          options: [
+            { id: 'bb-1', label: `1 (${activeBBMatch.home})`, odd: m.home },
+            { id: 'bb-x', label: 'Χ (Ισοπαλία)', odd: m.draw },
+            { id: 'bb-2', label: `2 (${activeBBMatch.away})`, odd: m.away }
+          ]
+        },
+        {
+          title: 'Σύνολο Γκολ Αγώνα',
+          groupKey: 'goals',
+          options: [
+            { id: 'bb-o15', label: 'Over 1.5 Γκολ', odd: Number(Math.max(1.18, m.over25 * 0.68).toFixed(2)) },
+            { id: 'bb-o25', label: 'Over 2.5 Γκολ', odd: m.over25 },
+            { id: 'bb-u25', label: 'Under 2.5 Γκολ', odd: m.under25 },
+            { id: 'bb-gg', label: 'Goal / Goal (Να σκοράρουν και οι 2)', odd: Number((m.over25 * 0.94).toFixed(2)) }
+          ]
+        },
+        {
+          title: 'Κόρνερ & Κάρτες',
+          groupKey: 'specials',
+          options: [
+            { id: 'bb-c85', label: 'Over 8.5 Κόρνερ', odd: 1.55 },
+            { id: 'bb-c95', label: 'Over 9.5 Κόρνερ', odd: 1.88 },
+            { id: 'bb-k35', label: 'Over 3.5 Κάρτες', odd: 1.62 }
+          ]
         }
+      ];
 
-        function setMarketFilter(market) {
-            currentMarket = market;
-            document.querySelectorAll('.market-btn').forEach(btn => {
-                if (btn.dataset.market === market) {
-                    btn.className = 'market-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-emerald-400 border border-emerald-500/40 transition-all whitespace-nowrap';
-                } else {
-                    btn.className = 'market-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-all whitespace-nowrap';
-                }
-            });
-            renderMatches();
+      document.getElementById('bb-league').textContent = `${activeBBMatch.flag} ${activeBBMatch.league}`;
+      document.getElementById('bb-match-title').textContent = `${activeBBMatch.home} vs ${activeBBMatch.away}`;
+
+      const container = document.getElementById('bb-options-container');
+      container.innerHTML = groups.map(g => `
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <h4 class="text-xs font-bold text-slate-300 mb-2.5">${g.title}</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${g.options.map(opt => `
+              <button onclick="toggleBBOption('${g.groupKey}', '${opt.id}', '${opt.label.replace(/'/g, "\\'")}', ${opt.odd})"
+                id="btn-${opt.id}"
+                class="bb-opt-btn flex items-center justify-between px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-600 text-left text-xs transition">
+                <span class="text-slate-200 font-medium pr-2">${opt.label}</span>
+                <span class="font-bold text-emerald-400 shrink-0">${opt.odd.toFixed(2)}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      updateBBFooter();
+      document.getElementById('bet-builder-modal').classList.remove('hidden');
+    }
+
+    function toggleBBOption(groupKey, optId, label, odd) {
+      const existingIdx = activeBBSelections.findIndex(s => s.id === optId);
+      if (existingIdx > -1) {
+        activeBBSelections.splice(existingIdx, 1);
+      } else {
+        activeBBSelections = activeBBSelections.filter(s => s.groupKey !== groupKey);
+        activeBBSelections.push({ groupKey, id: optId, label, odd });
+      }
+
+      document.querySelectorAll('.bb-opt-btn').forEach(btn => {
+        const id = btn.id.replace('btn-', '');
+        if (activeBBSelections.some(s => s.id === id)) {
+          btn.className = 'bb-opt-btn flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500 text-left text-xs transition';
+        } else {
+          btn.className = 'bb-opt-btn flex items-center justify-between px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-600 text-left text-xs transition';
         }
+      });
 
-        function renderMatches() {
-            const grid = document.getElementById('matches-grid');
-            
-            const filtered = matches.filter(m => {
-                const matchRegion = currentRegion === 'all' || m.region === currentRegion;
-                let matchMarket = true;
-                if (currentMarket === '1x2') matchMarket = m.category === '1x2';
-                if (currentMarket === 'goals') matchMarket = m.category === 'goals';
-                if (currentMarket === 'value') matchMarket = m.isValue === true;
-                if (currentMarket === 'builder') matchMarket = m.isBuilder === true;
-                return matchRegion && matchMarket;
-            });
+      updateBBFooter();
+    }
 
-            if (filtered.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center">
-                        <p class="text-slate-400 text-sm">Δεν βρέθηκαν προγνωστικά με αυτά τα φίλτρα.</p>
-                    </div>
-                `;
-                return;
-            }
+    function updateBBFooter() {
+      const count = activeBBSelections.length;
+      document.getElementById('bb-selected-count').textContent = count;
+      const addBtn = document.getElementById('bb-add-btn');
 
-            grid.innerHTML = filtered.map(match => {
-                const isAdded = betSlip.some(item => item.id === match.id);
-                return `
-                <div class="bg-slate-900 hover:bg-slate-850/90 border ${isAdded ? 'border-emerald-500/60' : 'border-slate-800'} rounded-2xl p-4 transition-all flex flex-col justify-between shadow-lg">
-                    <div>
-                        <!-- Card Top Meta -->
-                        <div class="flex items-center justify-between gap-2 mb-3">
-                            <div class="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                                <span>${match.flag}</span>
-                                <span class="text-slate-300 font-semibold">${match.league}</span>
-                                <span>•</span>
-                                <span>${match.time}</span>
-                            </div>
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-cyan-400 border border-slate-700">
-                                ${match.source}
-                            </span>
-                        </div>
+      if (count === 0) {
+        document.getElementById('bb-total-odd').textContent = '1.00';
+        addBtn.disabled = true;
+        return;
+      }
 
-                        <!-- Teams -->
-                        <div class="mb-3">
-                            <h4 class="text-base font-bold text-white tracking-tight">${match.home} <span class="text-slate-500 font-normal mx-1">vs</span> ${match.away}</h4>
-                        </div>
+      const rawProduct = activeBBSelections.reduce((acc, item) => acc * item.odd, 1);
+      const correlatedOdd = count > 1 ? rawProduct * 0.92 : rawProduct;
+      document.getElementById('bb-total-odd').textContent = correlatedOdd.toFixed(2);
+      addBtn.disabled = false;
+    }
 
-                        <!-- Tags (Value / Builder) -->
-                        <div class="flex flex-wrap gap-1.5 mb-3">
-                            ${match.isValue ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">🔥 Value Bet</span>` : ''}
-                            ${match.isBuilder ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">⚡ Bet Builder</span>` : ''}
-                        </div>
+    function addBetBuilderToSlip() {
+      if (!activeBBMatch || activeBBSelections.length === 0) return;
 
-                        <!-- Analytical Reasoning -->
-                        <p class="text-xs text-slate-400 leading-relaxed mb-4 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
-                            ${match.reasoning}
-                        </p>
-                    </div>
+      const rawProduct = activeBBSelections.reduce((acc, item) => acc * item.odd, 1);
+      const finalOdd = Number((activeBBSelections.length > 1 ? rawProduct * 0.92 : rawProduct).toFixed(2));
 
-                    <div>
-                        <!-- Confidence Meter -->
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between text-[11px] mb-1">
-                                <span class="text-slate-400">Εμπιστοσύνη Αλγορίθμου</span>
-                                <span class="font-bold text-emerald-400">${match.confidence}%</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full" style="width: ${match.confidence}%"></div>
-                            </div>
-                        </div>
+      slip = slip.filter(i => i.matchId !== activeBBMatch.id);
+      slip.push({
+        id: `bb-${activeBBMatch.id}`,
+        matchId: activeBBMatch.id,
+        matchName: `${activeBBMatch.home} - ${activeBBMatch.away}`,
+        pickLabel: activeBBSelections.map(s => s.label).join(' + '),
+        subItems: activeBBSelections.map(s => s.label),
+        odd: finalOdd,
+        isBetBuilder: activeBBSelections.length > 1
+      });
 
-                        <!-- Pick & Odds Box -->
-                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-                            <div>
-                                <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Πρόταση</span>
-                                <span class="text-sm font-extrabold text-white">${match.pick}</span>
-                            </div>
+      closeBetBuilder();
+      renderMatches();
+      renderSlip();
+      showToast('Το Bet Builder προστέθηκε στο δελτίο!');
+    }
 
-                            <div class="flex items-center gap-2">
-                                <button onclick="openBetBuilderForMatch('${match.id}')" title="Φτιάξε Bet Builder για αυτόν τον αγώνα" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 border border-slate-700 transition-colors">
-                                    <i data-lucide="layers" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="toggleSlipItem('${match.id}')" class="px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all active:scale-95 ${isAdded ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
-                                    <span>${match.odd.toFixed(2)}</span>
-                                    <i data-lucide="${isAdded ? 'check' : 'plus'}" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
+    function closeBetBuilder() {
+      document.getElementById('bet-builder-modal').classList.add('hidden');
+    }
 
-            lucide.createIcons();
-        }
+    function removeFromSlip(id) {
+      slip = slip.filter(i => i.id !== id);
+      renderMatches();
+      renderSlip();
+    }
 
-        // --- 5. BET SLIP LOGIC ---
-        function toggleSlipItem(matchId) {
-            const existingIndex = betSlip.findIndex(item => item.id === matchId);
-            if (existingIndex > -1) {
-                betSlip.splice(existingIndex, 1);
-                showToast('Αφαιρέθηκε από το δελτίο', 'info');
-            } else {
-                const match = matches.find(m => m.id === matchId);
-                if (!match) return;
-                betSlip.push({
-                    id: match.id,
-                    matchTitle: `${match.home} - ${match.away}`,
-                    pick: match.pick,
-                    odd: match.odd,
-                    isBuilder: match.isBuilder
-                });
-                showToast(`Προστέθηκε: ${match.pick} (${match.odd.toFixed(2)})`, 'success');
-            }
-            renderMatches();
-            renderSlip();
-        }
+    function clearSlip() {
+      slip = [];
+      renderMatches();
+      renderSlip();
+    }
 
-        function removeSlipItem(index) {
-            betSlip.splice(index, 1);
-            renderMatches();
-            renderSlip();
-        }
+    function updateStake(val) {
+      stake = Math.max(0, Number(val) || 0);
+      renderSlip();
+    }
 
-        function clearSlip() {
-            betSlip = [];
-            renderMatches();
-            renderSlip();
-            showToast('Το δελτίο καθαρίστηκε', 'info');
-        }
+    function renderSlip() {
+      const count = slip.length;
+      document.getElementById('desktop-slip-count').textContent = count;
+      document.getElementById('mobile-slip-count').textContent = count;
 
-        function renderSlip() {
-            const desktopContainer = document.getElementById('desktop-slip-items');
-            const mobileContainer = document.getElementById('mobile-slip-items');
-            const desktopFooter = document.getElementById('desktop-slip-footer');
-            const mobileFooter = document.getElementById('mobile-slip-footer');
-            
-            document.getElementById('desktop-slip-count').textContent = betSlip.length;
-            document.getElementById('mobile-slip-count').textContent = betSlip.length;
+      const emptyHTML = `
+        <div class="text-center py-8 px-4">
+          <div class="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3 text-slate-500">
+            <i data-lucide="ticket" class="w-6 h-6"></i>
+          </div>
+          <p class="text-xs font-semibold text-slate-300">Το δελτίο σας είναι άδειο</p>
+          <p class="text-[11px] text-slate-500 mt-1">Επιλέξτε αποδόσεις από τους επερχόμενους αγώνες ή φτιάξτε ένα Bet Builder.</p>
+        </div>
+      `;
 
-            if (betSlip.length === 0) {
-                const emptyHTML = `
-                    <div class="text-center py-8 px-4">
-                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
-                            <i data-lucide="ticket" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-medium text-slate-300">Το δελτίο σας είναι άδειο</p>
-                        <p class="text-xs text-slate-500 mt-1">Επιλέξτε προγνωστικά από τη λίστα ή φτιάξτε ένα custom Bet Builder.</p>
-                    </div>
-                `;
-                desktopContainer.innerHTML = emptyHTML;
-                mobileContainer.innerHTML = emptyHTML;
-                desktopFooter.classList.add('hidden');
-                mobileFooter.classList.add('hidden');
-                document.getElementById('mobile-total-odds').textContent = '1.00';
-                lucide.createIcons();
-                return;
-            }
+      if (count === 0) {
+        document.getElementById('desktop-slip-body').innerHTML = emptyHTML;
+        document.getElementById('mobile-slip-body').innerHTML = emptyHTML;
+        lucide.createIcons();
+        return;
+      }
 
-            const itemsHTML = betSlip.map((item, idx) => `
-                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start justify-between gap-2">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-1.5">
-                            ${item.isBuilder ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300">BUILDER</span>` : ''}
-                            <span class="text-xs font-semibold text-slate-300">${item.matchTitle}</span>
-                        </div>
-                        <p class="text-xs font-bold text-emerald-400">${item.pick}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-extrabold text-white">${item.odd.toFixed(2)}</span>
-                        <button onclick="removeSlipItem(${idx})" class="text-slate-500 hover:text-rose-400 p-1">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+      const totalOdd = slip.reduce((acc, item) => acc * item.odd, 1);
+      const potentialReturn = (totalOdd * stake).toFixed(2);
 
-            desktopContainer.innerHTML = itemsHTML;
-            mobileContainer.innerHTML = itemsHTML;
-            desktopFooter.classList.remove('hidden');
-            mobileFooter.classList.remove('hidden');
+      const itemsHTML = slip.map(item => `
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 relative group">
+          <button onclick="removeFromSlip('${item.id}')" class="absolute top-2.5 right-2.5 text-slate-500 hover:text-rose-400 transition">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+          <div class="flex items-center gap-1.5 mb-1 pr-5">
+            ${item.isBetBuilder ? '<span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">Bet Builder</span>' : ''}
+            <span class="text-[11px] font-semibold text-slate-400 truncate">${item.matchName}</span>
+          </div>
+          ${item.subItems && item.subItems.length > 1
+            ? `<ul class="text-xs text-white font-medium space-y-0.5 my-1.5 pl-2 border-l-2 border-amber-500/60">
+                ${item.subItems.map(sub => `<li>• ${sub}</li>`).join('')}
+               </ul>`
+            : `<p class="text-xs font-bold text-white pr-5">${item.pickLabel}</p>`
+          }
+          <div class="mt-2 flex items-center justify-between">
+            <span class="text-[10px] text-slate-500">Απόδοση</span>
+            <span class="text-xs font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">${item.odd.toFixed(2)}</span>
+          </div>
+        </div>
+      `).join('');
 
-            updateSlipCalculations();
-            lucide.createIcons();
-        }
+      const footerHTML = `
+        <div class="pt-3 border-t border-slate-800 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400">Συνολική Απόδοση (${count} ${count === 1 ? 'επιλογή' : 'επιλογές'}):</span>
+            <span class="font-extrabold text-base text-emerald-400">${totalOdd.toFixed(2)}</span>
+          </div>
 
-        function syncStakeInputs(val) {
-            document.getElementById('desktop-stake').value = val;
-            document.getElementById('mobile-stake').value = val;
-            updateSlipCalculations();
-        }
+          <div class="flex items-center justify-between gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+            <label class="text-xs text-slate-400">Ποντάρισμα (€)</label>
+            <input type="number" min="1" value="${stake}" onchange="updateStake(this.value)" onkeyup="updateStake(this.value)"
+              class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-right text-sm font-bold text-white focus:outline-none focus:border-emerald-500">
+          </div>
 
-        function updateSlipCalculations() {
-            const totalOdds = betSlip.reduce((acc, item) => acc * item.odd, 1);
-            const stake = parseFloat(document.getElementById('desktop-stake').value) || 0;
-            const potentialWin = totalOdds * stake;
+          <div class="flex items-center justify-between text-xs bg-emerald-500/10 border border-emerald-500/25 p-3 rounded-xl">
+            <span class="text-emerald-300 font-medium">Πιθανό Κέρδος:</span>
+            <span class="font-extrabold text-base text-emerald-400">${potentialReturn} €</span>
+          </div>
 
-            document.getElementById('desktop-total-odds').textContent = totalOdds.toFixed(2);
-            document.getElementById('mobile-total-odds').textContent = totalOdds.toFixed(2);
-            document.getElementById('mobile-drawer-odds').textContent = totalOdds.toFixed(2);
+          <div class="pt-1">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Άμεσο Παίξιμο σε Bookmaker (Αντιγραφή & Άνοιγμα):</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="openBookmaker('stoiximan')" class="py-2.5 px-3 rounded-xl bg-[#ff5500] hover:bg-[#e64d00] text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md">
+                <span>Stoiximan</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openBookmaker('bet365')" class="py-2.5 px-3 rounded-xl bg-[#027b5b] hover:bg-[#02664b] text-[#ffdf1b] font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md">
+                <span>bet365</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openBookmaker('superbet')" class="py-2.5 px-3 rounded-xl bg-[#e11d48] hover:bg-[#be123c] text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md">
+                <span>Superbet</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openBookmaker('novibet')" class="py-2.5 px-3 rounded-xl bg-[#00b8c8] hover:bg-[#009ba8] text-slate-950 font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md">
+                <span>Novibet</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
 
-            document.getElementById('desktop-potential-win').textContent = `${potentialWin.toFixed(2)} €`;
-            document.getElementById('mobile-potential-win').textContent = `${potentialWin.toFixed(2)} €`;
-        }
+          <button onclick="copySlip()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2 border border-slate-700">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Μόνο Αντιγραφή Δελτίου</span>
+          </button>
+        </div>
+      `;
 
-        // --- 6. CUSTOM BET BUILDER LOGIC ---
-        function populateBuilderMatchSelect() {
-            const select = document.getElementById('bb-match-select');
-            select.innerHTML = matches.map(m => `
-                <option value="${m.id}">${m.flag} ${m.home} - ${m.away} (${m.league})</option>
-            `).join('');
-        }
+      document.getElementById('desktop-slip-body').innerHTML = itemsHTML + footerHTML;
+      document.getElementById('mobile-slip-body').innerHTML = itemsHTML + footerHTML;
+      lucide.createIcons();
+    }
 
-        function openBetBuilderModal() {
-            resetBuilderSelections();
-            toggleModal('bet-builder-modal', true);
-        }
+    function openBookmaker(provider) {
+      if (slip.length === 0) return;
 
-        function openBetBuilderForMatch(matchId) {
-            document.getElementById('bb-match-select').value = matchId;
-            resetBuilderSelections();
-            toggleModal('bet-builder-modal', true);
-        }
+      const totalOdd = slip.reduce((acc, item) => acc * item.odd, 1).toFixed(2);
+      const lines = slip.map(i => `• ${i.matchName}: ${i.pickLabel} (@${i.odd.toFixed(2)})`);
+      const text = `🎯 BetRadar GR Δελτίο:\n${lines.join('\n')}\nΣυνολική Απόδοση: ${totalOdd}`;
 
-        function resetBuilderSelections() {
-            bbSelections = { result: null, goals: null, specials: null };
-            document.querySelectorAll('.bb-opt-btn').forEach(btn => {
-                btn.classList.remove('border-emerald-500', 'bg-emerald-500/15');
-                btn.classList.add('border-slate-800', 'bg-slate-900');
-            });
-            updateBuilderCalculation();
-        }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
 
-        function toggleBuilderOption(btnElement, group, label, odd) {
-            const groupContainer = btnElement.parentElement;
-            const isAlreadySelected = bbSelections[group] && bbSelections[group].label === label;
+      const urls = {
+        stoiximan: 'https://www.stoiximan.gr/sport/podosfairo/',
+        bet365: 'https://www.bet365.gr/#/AS/B1/',
+        superbet: 'https://superbet.gr/stoixima/podosfairo',
+        novibet: 'https://www.novibet.gr/stoixima/podosfairo'
+      };
 
-            // Reset buttons in this group
-            groupContainer.querySelectorAll('.bb-opt-btn').forEach(b => {
-                b.classList.remove('border-emerald-500', 'bg-emerald-500/15');
-                b.classList.add('border-slate-800', 'bg-slate-900');
-            });
+      const names = {
+        stoiximan: 'Stoiximan.gr',
+        bet365: 'Bet365.gr',
+        superbet: 'Superbet.gr',
+        novibet: 'Novibet.gr'
+      };
 
-            if (isAlreadySelected) {
-                bbSelections[group] = null;
-            } else {
-                bbSelections[group] = { label, odd };
-                btnElement.classList.remove('border-slate-800', 'bg-slate-900');
-                btnElement.classList.add('border-emerald-500', 'bg-emerald-500/15');
-            }
+      showToast(`Το δελτίο αντιγράφηκε! Μετάβαση στο ${names[provider]}...`);
+      window.open(urls[provider], '_blank', 'noopener,noreferrer');
+    }
 
-            updateBuilderCalculation();
-        }
+    function copySlip() {
+      const totalOdd = slip.reduce((acc, item) => acc * item.odd, 1).toFixed(2);
+      const lines = slip.map(i => `• ${i.matchName}: ${i.pickLabel} (@${i.odd.toFixed(2)})`);
+      const text = `🎯 BetRadar GR Δελτίο:\n${lines.join('\n')}\nΣυνολική Απόδοση: ${totalOdd} | Ποντάρισμα: ${stake}€`;
+      navigator.clipboard.writeText(text);
+      showToast('Το δελτίο αντιγράφηκε στο πρόχειρο!');
+    }
 
-        function updateBuilderCalculation() {
-            const activePicks = Object.values(bbSelections).filter(Boolean);
-            const count = activePicks.length;
-            
-            // Calculate combined odds with slight correlation factor (0.94) like real sportsbooks
-            let combinedOdd = 1.00;
-            if (count > 0) {
-                const rawProduct = activePicks.reduce((acc, p) => acc * p.odd, 1);
-                combinedOdd = count > 1 ? rawProduct * 0.94 : rawProduct;
-            }
+    function toggleMobileSlip() {
+      const drawer = document.getElementById('mobile-slip-drawer');
+      drawer.classList.toggle('hidden');
+    }
 
-            document.getElementById('bb-calculated-odd').textContent = combinedOdd.toFixed(2);
-            document.getElementById('bb-selections-count').textContent = `(${count} επιλογές)`;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
 
-            const addBtn = document.getElementById('bb-add-btn');
-            addBtn.disabled = count < 2;
-        }
-
-        function addCustomBuilderToSlip() {
-            const matchId = document.getElementById('bb-match-select').value;
-            const match = matches.find(m => m.id === matchId);
-            const activePicks = Object.values(bbSelections).filter(Boolean);
-            
-            if (!match || activePicks.length < 2) return;
-
-            const combinedOdd = parseFloat(document.getElementById('bb-calculated-odd').textContent);
-            const combinedLabel = activePicks.map(p => p.label).join(' + ');
-
-            betSlip.push({
-                id: `bb-${Date.now()}`,
-                matchTitle: `${match.home} - ${match.away}`,
-                pick: combinedLabel,
-                odd: combinedOdd,
-                isBuilder: true
-            });
-
-            renderSlip();
-            toggleModal('bet-builder-modal', false);
-            showToast(`Προστέθηκε Bet Builder (${combinedOdd.toFixed(2)})!`, 'success');
-        }
-
-        // --- 7. SIMULATED NETLIFY FEED SYNC ---
-        function syncFeeds() {
-            const icon = document.getElementById('sync-icon');
-            const badge = document.getElementById('last-sync-badge');
-            icon.classList.add('animate-spin');
-            
-            showToast('Σάρωση ελληνικών & διεθνών πηγών...', 'info');
-
-            setTimeout(() => {
-                icon.classList.remove('animate-spin');
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-                badge.textContent = `Ενημ. ${timeStr}`;
-                showToast('Τα προγνωστικά & οι αποδόσεις συγχρονίστηκαν!', 'success');
-            }, 900);
-        }
-
-        // --- 8. CLIPBOARD & UI HELPERS ---
-        function formatSlipText() {
-            const totalOdds = document.getElementById('desktop-total-odds').textContent;
-            const stake = document.getElementById('desktop-stake').value;
-            const potentialWin = document.getElementById('desktop-potential-win').textContent;
-
-            let text = `⚽ BetRadar GR - Προγνωστικά Δελτίο\n------------------------\n`;
-            betSlip.forEach((item, i) => {
-                const tag = item.isBuilder ? ' [Bet Builder]' : '';
-                text += `${i + 1}. ${item.matchTitle}${tag}\n   👉 ${item.pick} (@${item.odd.toFixed(2)})\n`;
-            });
-            text += `------------------------\n📊 Συνολική Απόδοση: ${totalOdds}\n💶 Ποντάρισμα: ${stake}€ | Πιθανό Κέρδος: ${potentialWin}`;
-            return text;
-        }
-
-        function writeTextToClipboard(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-9999px';
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-        }
-
-        function copySlipToClipboard() {
-            if (betSlip.length === 0) return;
-            writeTextToClipboard(formatSlipText());
-            showToast('Το δελτίο αντιγράφηκε στο πρόχειρο!', 'success');
-        }
-
-        function redirectToBookmaker(bookmakerKey) {
-            if (betSlip.length === 0) {
-                showToast('Προσθέστε πρώτα επιλογές στο δελτίο!', 'info');
-                return;
-            }
-
-            // Copy formatted betslip so the user has all legs & odds ready
-            writeTextToClipboard(formatSlipText());
-
-            const bookmakers = {
-                stoiximan: {
-                    name: 'Stoiximan.gr',
-                    baseUrl: 'https://www.stoiximan.gr/sport/podosphairo/',
-                    searchUrl: (q) => `https://www.stoiximan.gr/sport/podosphairo/?q=${encodeURIComponent(q)}`
-                },
-                bet365: {
-                    name: 'Bet365.gr',
-                    baseUrl: 'https://www.bet365.gr/#/AS/B1/',
-                    searchUrl: () => 'https://www.bet365.gr/#/AS/B1/'
-                },
-                superbet: {
-                    name: 'Superbet.gr',
-                    baseUrl: 'https://www.superbet.gr/stoiximata/podosfairo',
-                    searchUrl: (q) => `https://www.superbet.gr/stoiximata/podosfairo?search=${encodeURIComponent(q)}`
-                },
-                novibet: {
-                    name: 'Novibet.gr',
-                    baseUrl: 'https://www.novibet.gr/stoixima/podosfairo',
-                    searchUrl: (q) => `https://www.novibet.gr/stoixima/podosfairo?q=${encodeURIComponent(q)}`
-                }
-            };
-
-            const target = bookmakers[bookmakerKey];
-            if (!target) return;
-
-            // If single match / single Bet Builder ticket, pass the team name as search parameter where supported
-            let destinationUrl = target.baseUrl;
-            if (betSlip.length === 1) {
-                const firstTeam = betSlip[0].matchTitle.split(' - ')[0].trim();
-                destinationUrl = target.searchUrl(firstTeam);
-            }
-
-            showToast(`Το δελτίο αντιγράφηκε! Μετάβαση στο ${target.name}...`, 'success');
-            window.open(destinationUrl, '_blank', 'noopener,noreferrer');
-        }
-
-        function toggleModal(modalId, show) {
-            const el = document.getElementById(modalId);
-            if (show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
-
-        function toggleMobileSlipDrawer(show) {
-            const el = document.getElementById('mobile-slip-drawer');
-            if (show) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const borderClass = type === 'success' ? 'border-emerald-500/50 text-emerald-300' : 'border-slate-700 text-slate-200';
-            
-            toast.className = `px-4 py-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md border ${borderClass} shadow-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 transform translate-y-0`;
-            toast.innerHTML = `
-                <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : 'bg-cyan-400'}"></span>
-                <span>${message}</span>
-            `;
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 2600);
-        }
-    </script>
+    // Init
+    updateClock();
+    setInterval(updateClock, 30000);
+    setInterval(renderMatches, 60000);
+    renderSlip();
+    fetchLiveMatches(false);
+  </script>
 </body>
 </html>
